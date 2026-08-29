@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" preserveAspectRatio="xMidYMax meet">
+  <defs>
+    <clipPath id="portrait-cutout">
+      <path d="M0 500V393C35 374 71 358 107 348C122 341 129 327 126 308C109 291 100 269 100 245C100 224 108 210 121 202C120 179 127 151 143 125C142 96 158 67 184 46C205 29 231 22 254 22C285 23 314 36 335 58C357 80 367 107 362 130C378 153 383 180 381 204C394 214 401 229 400 247C398 274 389 294 373 310C370 329 377 341 394 348C431 359 469 374 500 393V500Z" />
+    </clipPath>
+  </defs>
+  <image href="hero-portrait-source.png" width="500" height="500" clip-path="url(#portrait-cutout)" />
+</svg>
