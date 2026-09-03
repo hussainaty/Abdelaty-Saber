@@ -977,11 +977,13 @@ h2 {
 
 .art-tall { grid-column: span 3; grid-row: span 6; }
 .art-square { grid-column: span 5; grid-row: span 6; }
+.art-portrait { grid-column: span 4; grid-row: span 6; background: var(--paper); }
 .art-mid { grid-column: span 4; grid-row: span 3; }
 .art-wide { grid-column: span 7; grid-row: span 3; }
 
 .art-tall img { object-position: center; }
 .art-square img { object-position: 58% center; }
+.art-portrait img { object-fit: contain; }
 .art-wide img { object-position: center 36%; }
 
 .teaching-section {
@@ -1021,7 +1023,7 @@ h2 {
   line-height: 1;
 }
 
-.portrait-panel {
+.course-poster-panel {
   position: relative;
   display: grid;
   min-height: clamp(360px, 43vw, 570px);
@@ -1030,11 +1032,10 @@ h2 {
   background: var(--paper);
 }
 
-.portrait-panel > img:first-child {
+.course-poster-panel > img:first-child {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  mix-blend-mode: multiply;
+  object-fit: cover;
 }
 
 .course-evidence {
@@ -1126,7 +1127,7 @@ h2 {
   align-items: start;
 }
 
-.archive-layout > div > p:not(.section-kicker) {
+.archive-intro > p:not(.section-kicker) {
   max-width: 31ch;
   margin: 26px 0 0;
   color: oklch(0.37 0.025 61);
@@ -1686,11 +1687,12 @@ html[dir="rtl"] .archive-timeline time {
   .art-grid { grid-auto-rows: 74px; gap: 8px; margin-top: 40px; }
   .art-tall { grid-column: span 5; grid-row: span 5; }
   .art-square { grid-column: span 7; grid-row: span 5; }
+  .art-portrait { grid-column: span 6; grid-row: span 4; }
   .art-mid { grid-column: span 6; grid-row: span 3; }
   .art-wide { grid-column: span 12; grid-row: span 3; }
   .teaching-layout { grid-template-columns: 1fr; }
   .teaching-intro { grid-column: auto; }
-  .portrait-panel { min-height: 360px; }
+  .course-poster-panel { min-height: 360px; }
   .course-evidence { grid-column: auto; grid-template-columns: 1fr 1fr; }
   .course-evidence .artwork:last-child { grid-column: span 2; }
   .about-facts div { grid-template-columns: 70px minmax(0, 1fr); }
