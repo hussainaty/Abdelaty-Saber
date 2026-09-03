@@ -364,6 +364,8 @@ main > section:not(.hero)::before {
   font-size: clamp(0.67rem, 0.9vw, 0.78rem);
   font-weight: 700;
   letter-spacing: 0.12em;
+  line-height: 1.6;
+  text-wrap: pretty;
   text-transform: uppercase;
 }
 
@@ -1178,6 +1180,108 @@ h2 {
   line-height: 1.65;
 }
 
+.certificates-section {
+  padding: clamp(82px, 10vw, 142px) 0;
+  color: var(--paper-ink);
+  background: var(--paper-deep);
+}
+
+.certificates-section h2 {
+  color: var(--paper-ink);
+}
+
+.certificates-section .section-kicker {
+  color: oklch(0.38 0.085 67);
+}
+
+.certificates-layout {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.68fr) minmax(480px, 1.32fr);
+  gap: clamp(44px, 9vw, 150px);
+  align-items: start;
+}
+
+.certificates-intro > p:not(.section-kicker) {
+  max-width: 31ch;
+  margin: 26px 0 0;
+  color: oklch(0.35 0.024 61);
+  line-height: 1.72;
+}
+
+.certificate-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 0.8fr);
+  gap: clamp(24px, 3.8vw, 62px);
+  align-items: start;
+}
+
+.certificate-card {
+  display: block;
+  color: var(--paper-ink);
+}
+
+.certificate-degree {
+  padding-top: clamp(36px, 6vw, 90px);
+}
+
+.certificate-preview {
+  margin: 0;
+  aspect-ratio: 0.72;
+  overflow: hidden;
+  border: 1px solid oklch(0.4 0.035 67 / 0.38);
+  background: oklch(0.95 0.008 75);
+}
+
+.certificate-preview-wide {
+  aspect-ratio: 1.33;
+}
+
+.certificate-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 450ms var(--ease-out);
+}
+
+.certificate-card:hover .certificate-preview img {
+  transform: scale(1.025);
+}
+
+.certificate-meta {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 13px;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid oklch(0.4 0.035 67 / 0.38);
+}
+
+.certificate-meta > span {
+  color: oklch(0.38 0.085 67);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+}
+
+.certificate-meta h3 {
+  margin: 0;
+  color: var(--paper-ink);
+  font-family: var(--font-display);
+  font-size: clamp(1.12rem, 1.65vw, 1.55rem);
+  font-weight: 400;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+
+.certificate-meta p {
+  margin: 8px 0 0;
+  color: oklch(0.36 0.024 61);
+  font-size: 0.73rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .contact-section {
   padding: clamp(82px, 10vw, 142px) 0;
   color: var(--paper-ink);
@@ -1252,6 +1356,73 @@ h2 {
 .contact-value {
   overflow-wrap: anywhere;
   text-align: end;
+}
+
+.contact-socials {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding-top: 22px;
+}
+
+.contact-socials > p {
+  margin: 0;
+  color: oklch(0.36 0.024 61);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.social-links {
+  display: flex;
+  gap: 8px;
+}
+
+.social-links a {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid oklch(0.4 0.035 67 / 0.5);
+  color: var(--paper-ink);
+  transition: color 180ms ease, border-color 180ms ease, transform 180ms var(--ease-out);
+}
+
+.social-links a:hover {
+  border-color: var(--gold);
+  color: oklch(0.45 0.09 66);
+  transform: translateY(-2px);
+}
+
+.social-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.social-icon-facebook {
+  fill: currentColor;
+}
+
+.social-icon-x {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.7;
+}
+
+.social-icon-youtube {
+  fill: none;
+  stroke: currentColor;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.social-icon-youtube path:last-child {
+  fill: currentColor;
+  stroke: none;
 }
 
 html[dir="rtl"] .contact-detail {
@@ -1463,7 +1634,8 @@ html[dir="rtl"] .archive-timeline time {
   .teaching-layout { grid-template-columns: minmax(0, 0.9fr) minmax(220px, 0.75fr); }
   .teaching-intro { grid-column: span 2; }
   .course-evidence { grid-column: 1; }
-  .about-layout, .archive-layout { grid-template-columns: 1fr; gap: 52px; }
+  .about-layout, .archive-layout, .certificates-layout { grid-template-columns: 1fr; gap: 52px; }
+  .certificates-intro > p:not(.section-kicker) { max-width: 48ch; }
   .about-photo { max-width: 700px; }
   .contact-layout { grid-template-columns: 1fr; gap: 32px; }
   .contact-details { justify-self: start; }
@@ -1479,13 +1651,19 @@ html[dir="rtl"] .archive-timeline time {
   .hero-shade { background: linear-gradient(to bottom, oklch(0.09 0.009 62 / 0.98), oklch(0.09 0.009 62 / 0.82) 48%, oklch(0.09 0.009 62 / 0.18) 73%, oklch(0.09 0.009 62 / 0.55)); }
   .hero-copy { align-self: start; width: auto; margin: 0 25px; padding-top: 130px; }
   .hero h1 { gap: 9px; margin: 13px 0; }
-  .arabic-name { font-size: clamp(3rem, 16vw, 4.5rem); line-height: 1.16; }
+  .arabic-name { max-inline-size: 100%; font-size: clamp(2.25rem, 11vw, 3.6rem); line-height: 1.16; text-wrap: nowrap; white-space: nowrap; }
   .hero-role { font-size: 0.62rem; letter-spacing: 0.07em; }
   .english-name { font-size: 0.8rem; letter-spacing: 0.25em; }
   .scroll-note { display: none; }
   .contact-detail { grid-template-columns: 1fr; gap: 7px; }
   .contact-value { text-align: start; }
-  .works-overview, .graphic-section, .motion-section, .art-section, .teaching-section, .identity-section, .about-section, .archive-section, .contact-section { padding-top: 82px; padding-bottom: 82px; }
+  .certificate-grid { grid-template-columns: 1fr; gap: 38px; }
+  .certificate-degree { padding-top: 0; }
+  .certificate-preview { max-width: 420px; }
+  .certificate-preview-wide { max-width: none; }
+  .contact-socials { align-items: flex-start; }
+  .contact-socials > p { max-width: 25ch; }
+  .works-overview, .graphic-section, .motion-section, .art-section, .teaching-section, .identity-section, .about-section, .archive-section, .certificates-section, .contact-section { padding-top: 82px; padding-bottom: 82px; }
   h2 { font-size: clamp(2.45rem, 13vw, 4rem); }
   .discipline-board { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(5, 185px); gap: 8px; margin-top: 42px; }
   .discipline-featured { grid-column: span 2; grid-row: span 2; }
