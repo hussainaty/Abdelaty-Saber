@@ -1,0 +1,12 @@
+{
+  "name": "abdelaty-saber-portfolio",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node tools/serve.mjs",
+    "check": "node --check script.js && node --check motion.js && node --check tools/serve.mjs"
+  },
+  "dependencies": {
+    "gsap": "^3.15.0"
+  }
+}

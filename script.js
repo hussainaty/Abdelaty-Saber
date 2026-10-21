@@ -7,240 +7,348 @@ const dialog = document.querySelector("[data-lightbox-dialog]");
 const dialogImage = document.querySelector("[data-dialog-image]");
 const dialogCaption = document.querySelector("[data-dialog-caption]");
 const dialogClose = document.querySelector("[data-dialog-close]");
-let refreshMotionCopy = () => {};
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const players = [];
+let lightboxTrigger;
+let closeAnimation;
 
 document.querySelector("[data-current-year]").textContent = String(new Date().getFullYear());
+menuButton.setAttribute("aria-controls", mobileMenu.id);
 
-function updateHeader() {
-  header.classList.toggle("is-scrolled", window.scrollY > 24);
+function updateMenuLabel() {
+  const open = menuButton.getAttribute("aria-expanded") === "true";
+  menuButton.setAttribute("aria-label", root.lang === "ar" ? (open ? "إغلاق القائمة" : "فتح القائمة") : (open ? "Close menu" : "Open menu"));
 }
-
-function closeMenu() {
+function syncPlayers() { players.forEach(player => player.sync()); }
+function closeMenu(restoreFocus = false) {
   menuButton.setAttribute("aria-expanded", "false");
   mobileMenu.classList.remove("is-open");
   mobileMenu.setAttribute("aria-hidden", "true");
+  mobileMenu.inert = true;
   document.body.classList.remove("menu-open");
+  document.querySelector("main").inert = false;
+  document.querySelector(".site-footer").inert = false;
+  updateMenuLabel();
+  if (restoreFocus) menuButton.focus();
+  syncPlayers();
 }
-
 function openMenu() {
   menuButton.setAttribute("aria-expanded", "true");
   mobileMenu.classList.add("is-open");
   mobileMenu.setAttribute("aria-hidden", "false");
+  mobileMenu.inert = false;
   document.body.classList.add("menu-open");
+  document.querySelector("main").inert = true;
+  document.querySelector(".site-footer").inert = true;
+  updateMenuLabel();
+  mobileMenu.querySelector("a").focus();
+  syncPlayers();
 }
-
 function setLanguage(language) {
-  const isArabic = language === "ar";
+  const arabic = language === "ar";
   root.lang = language;
-  root.dir = isArabic ? "rtl" : "ltr";
-  document.title = isArabic ? "عبدالعاطي صابر" : "Abdelaty Saber";
-  languageButton.textContent = isArabic ? "English" : "العربية";
-  languageButton.setAttribute("aria-label", isArabic ? "Switch to English" : "تبديل اللغة إلى العربية");
-
-  document.querySelectorAll("[data-en][data-ar]").forEach((element) => {
-    element.innerHTML = isArabic ? element.dataset.ar : element.dataset.en;
+  root.dir = arabic ? "rtl" : "ltr";
+  document.title = arabic ? "عبدالعاطي صابر" : "Abdelaty Saber";
+  languageButton.textContent = arabic ? "English" : "العربية";
+  languageButton.setAttribute("aria-label", arabic ? "Switch to English" : "تبديل اللغة إلى العربية");
+  document.querySelectorAll("[data-en][data-ar]").forEach(element => {
+    element.innerHTML = arabic ? element.dataset.ar : element.dataset.en;
   });
-
-  document.querySelector(".brand").setAttribute(
-    "aria-label",
-    isArabic ? "عبدالعاطي صابر — الصفحة الرئيسية" : "Abdelaty Saber — home"
-  );
-  menuButton.setAttribute("aria-label", isArabic ? "فتح القائمة" : "Open menu");
-  localStorage.setItem("abdelaty-saber-language", language);
-  refreshMotionCopy();
+  document.querySelector(".brand").setAttribute("aria-label", arabic ? "عبدالعاطي صابر — الصفحة الرئيسية" : "Abdelaty Saber — home");
+  updateMenuLabel();
+  dialog.setAttribute("aria-label", arabic ? "عرض العمل الفني" : "Artwork preview");
+  dialogClose.setAttribute("aria-label", arabic ? "إغلاق عرض العمل الفني" : "Close artwork preview");
+  const logo = document.querySelector("[data-logo-film]");
+  logo.setAttribute("aria-label", arabic ? "فيلم شعار عبدالعاطي صابر ثلاثي الأبعاد" : "Abdelaty Saber 3D logo film");
+  logo.querySelector("video").setAttribute("aria-label", logo.getAttribute("aria-label"));
+  logo.querySelector(".logo-film-poster").alt = arabic ? "اسم عبدالعاطي صابر بالخط العربي الذهبي ثلاثي الأبعاد" : "Abdelaty Saber's golden Arabic calligraphy in 3D";
+  players.forEach(player => player.refreshCopy());
+  try { localStorage.setItem("abdelaty-saber-language", language); } catch { /* Storage can be disabled in private browsing. */ }
+  document.dispatchEvent(new Event("portfolio:language"));
 }
 
 function openLightbox(trigger) {
+  closeAnimation?.cancel();
+  lightboxTrigger = trigger;
   dialogImage.src = trigger.dataset.src;
   dialogImage.alt = trigger.dataset.alt;
   dialogCaption.textContent = root.lang === "ar" ? trigger.dataset.captionAr : trigger.dataset.captionEn;
-  if (!dialog.open) {
-    dialog.showModal();
+  if (!dialog.open) dialog.showModal();
+  document.body.classList.add("lightbox-open");
+  if (!reduceMotion.matches && dialog.animate) {
+    dialog.animate([{ opacity: 0, transform: "translateY(24px) scale(.97)" }, { opacity: 1, transform: "none" }], { duration: 420, easing: "cubic-bezier(.16,1,.3,1)" });
   }
   dialogClose.focus();
+  syncPlayers();
 }
-
 function closeLightbox() {
-  if (dialog.open) {
-    dialog.close();
-  }
+  if (!dialog.open || closeAnimation?.playState === "running") return;
+  if (reduceMotion.matches || !dialog.animate) return dialog.close();
+  closeAnimation = dialog.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(12px) scale(.985)" }], { duration: 190, easing: "ease-in" });
+  closeAnimation.onfinish = () => dialog.close();
 }
 
-updateHeader();
-window.addEventListener("scroll", updateHeader, { passive: true });
+// Observe a sentinel instead of running a handler on every scroll frame.
+const headerSentinel = document.createElement("div");
+headerSentinel.className = "header-sentinel";
+headerSentinel.setAttribute("aria-hidden", "true");
+document.body.prepend(headerSentinel);
+if ("IntersectionObserver" in window) {
+  new IntersectionObserver(([entry]) => header.classList.toggle("is-scrolled", !entry.isIntersecting)).observe(headerSentinel);
+} else header.classList.add("is-scrolled");
 
-languageButton.addEventListener("click", () => {
-  setLanguage(root.lang === "ar" ? "en" : "ar");
-});
-
-menuButton.addEventListener("click", () => {
-  if (menuButton.getAttribute("aria-expanded") === "true") {
+languageButton.addEventListener("click", () => setLanguage(root.lang === "ar" ? "en" : "ar"));
+menuButton.addEventListener("click", () => menuButton.getAttribute("aria-expanded") === "true" ? closeMenu(true) : openMenu());
+matchMedia("(min-width: 901px)").addEventListener("change", event => { if (event.matches) closeMenu(); });
+mobileMenu.querySelectorAll("a").forEach(link => {
+  link.addEventListener("click", () => {
     closeMenu();
-  } else {
-    openMenu();
-  }
+    const target = document.querySelector(link.getAttribute("href"));
+    if (target) { target.tabIndex = -1; target.focus({ preventScroll: true }); }
+  });
 });
-
-mobileMenu.querySelectorAll("a").forEach((link) => {
-  link.addEventListener("click", closeMenu);
+document.addEventListener("keydown", event => {
+  if (menuButton.getAttribute("aria-expanded") !== "true") return;
+  if (event.key === "Escape") closeMenu(true);
+  if (event.key !== "Tab") return;
+  const focusable = [...header.querySelectorAll("a, button"), ...mobileMenu.querySelectorAll("a")].filter(element => element.getClientRects().length);
+  const index = focusable.indexOf(document.activeElement);
+  if (event.shiftKey && index <= 0) { event.preventDefault(); focusable.at(-1).focus(); }
+  else if (!event.shiftKey && index === focusable.length - 1) { event.preventDefault(); focusable[0].focus(); }
 });
-
-document.querySelectorAll("[data-lightbox]").forEach((trigger) => {
-  trigger.addEventListener("click", () => openLightbox(trigger));
+document.querySelectorAll("[data-lightbox]").forEach(trigger => trigger.addEventListener("click", () => openLightbox(trigger)));
+// Native smooth anchor travel is explicit; global smooth CSS would interfere
+// with ScrollTrigger's resize/pin measurements and shift the scroll position.
+document.querySelectorAll('a[href^="#"]').forEach(link => {
+  link.addEventListener("click", event => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const target = document.querySelector(link.getAttribute("href"));
+    if (!target) return;
+    event.preventDefault();
+    if (location.hash !== link.hash) history.pushState(null, "", link.hash);
+    target.scrollIntoView({ behavior: reduceMotion.matches ? "instant" : "smooth", block: "start" });
+    if (!target.hasAttribute("tabindex")) target.tabIndex = -1;
+    target.focus({ preventScroll: true });
+  });
 });
-
 dialogClose.addEventListener("click", closeLightbox);
-dialog.addEventListener("click", (event) => {
-  if (event.target === dialog) {
-    closeLightbox();
-  }
+dialog.addEventListener("click", event => { if (event.target === dialog) closeLightbox(); });
+dialog.addEventListener("cancel", event => { event.preventDefault(); closeLightbox(); });
+dialog.addEventListener("close", () => {
+  document.body.classList.remove("lightbox-open");
+  lightboxTrigger?.focus({ preventScroll: true });
+  syncPlayers();
 });
 
 const navLinks = [...document.querySelectorAll(".desktop-nav a")];
-const observedSections = [...document.querySelectorAll("[data-section]")];
-const sectionObserver = new IntersectionObserver(
-  (entries) => {
-    entries.forEach((entry) => {
-      entry.target.classList.toggle("is-in-view", entry.isIntersecting);
+if ("IntersectionObserver" in window) {
+  const sectionObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
       if (!entry.isIntersecting) return;
-      const activeName = entry.target.dataset.section;
-      navLinks.forEach((link) => {
-        link.classList.toggle("is-active", link.getAttribute("href") === "#" + activeName);
+      navLinks.forEach(link => {
+        const active = link.getAttribute("href") === "#" + entry.target.dataset.section;
+        link.classList.toggle("is-active", active);
+        if (active) link.setAttribute("aria-current", "location");
+        else link.removeAttribute("aria-current");
       });
     });
-  },
-  { rootMargin: "-35% 0px -55% 0px", threshold: 0 }
-);
+  }, { rootMargin: "-20% 0px -60% 0px" });
+  document.querySelectorAll("[data-section]").forEach(section => sectionObserver.observe(section));
+}
 
-observedSections.forEach((section) => sectionObserver.observe(section));
-
-const transitionSections = [...document.querySelectorAll("main > section:not(.hero)")];
-const transitionObserver = new IntersectionObserver(
-  (entries) => {
-    entries.forEach((entry) => entry.target.classList.toggle("is-in-view", entry.isIntersecting));
-  },
-  { rootMargin: "-12% 0px -16% 0px", threshold: 0.08 }
-);
-
-transitionSections.forEach((section) => transitionObserver.observe(section));
-
-const motionCinema = document.querySelector("[data-motion-cinema]");
-
-if (motionCinema) {
-  const motionVideos = [...motionCinema.querySelectorAll("[data-motion-video]")];
-  const motionTitle = motionCinema.querySelector("[data-motion-title]");
-  const motionIndex = motionCinema.querySelector("[data-motion-index]");
-  const motionKind = motionCinema.querySelector("[data-motion-kind]");
-  const motionWipeIndex = motionCinema.querySelector("[data-motion-wipe-index]");
-  const motionWipeTitle = motionCinema.querySelector("[data-motion-wipe-title]");
-  const motionProgress = motionCinema.querySelector("[data-motion-progress]");
-  let activeMotion = 0;
-  let reelIsVisible = false;
-  let isTransitioning = false;
-
-  const motionName = (video) => (root.lang === "ar" ? video.dataset.titleAr : video.dataset.titleEn);
-  const sequenceIndex = (index) => `${String(index + 1).padStart(2, "0")} / ${String(motionVideos.length).padStart(2, "0")}`;
-
-  const startProgress = (video) => {
-    const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration * 1000 : 8000;
-    motionProgress.style.setProperty("--motion-duration", `${duration}ms`);
-    motionProgress.classList.remove("is-running");
-    void motionProgress.offsetWidth;
-    motionProgress.classList.add("is-running");
-  };
-
-  refreshMotionCopy = () => {
-    const activeVideo = motionVideos[activeMotion];
-    motionTitle.textContent = motionName(activeVideo);
-    motionIndex.textContent = sequenceIndex(activeMotion);
-    motionKind.textContent = root.lang === "ar" ? motionKind.dataset.ar : motionKind.dataset.en;
-  };
-
-  const playActiveMotion = ({ restart = false } = {}) => {
-    const activeVideo = motionVideos[activeMotion];
-    if (!activeVideo || !reelIsVisible || document.hidden) return;
-
-    activeVideo.muted = true;
-    activeVideo.controls = false;
-    if (restart || activeVideo.ended) activeVideo.currentTime = 0;
-    startProgress(activeVideo);
-    activeVideo.play().catch(() => {});
-  };
-
-  const showMotion = (index) => {
-    activeMotion = index;
-    motionVideos.forEach((video, videoIndex) => {
-      const isActive = videoIndex === activeMotion;
-      video.classList.toggle("is-active", isActive);
-      video.classList.remove("is-leaving");
-      video.setAttribute("aria-hidden", String(!isActive));
-      if (!isActive) {
-        video.pause();
-        video.currentTime = 0;
-      }
+// Playback is independent of GSAP. The logo is an automatic, scroll-controlled
+// film; the existing reel retains its manual controls and motion preferences.
+function createPlayer(container, videos, isReel = false) {
+  const automatic = container.hasAttribute("data-scroll-playback");
+  const toggle = container.querySelector("[data-player-toggle]");
+  const start = container.querySelector("[data-player-start]");
+  const progress = container.querySelector("[data-motion-progress]");
+  const fallback = container.querySelector("[data-player-fallback]");
+  const saveData = Boolean(navigator.connection?.saveData);
+  let active = 0;
+  let visible = false;
+  let userPaused = false;
+  let userStarted = false;
+  let blocked = false;
+  let transitioning = false;
+  let transitionTimer;
+  let playRequest = 0;
+  const failedSources = new WeakMap();
+  // The logo's explicit automatic mode only overrides media playback defaults;
+  // decorative GSAP/CSS motion still respects the system preference.
+  const allowed = () => visible && !document.hidden && !dialog.open && !document.body.classList.contains("menu-open") && !userPaused && (automatic || (!reduceMotion.matches && !saveData) || userStarted);
+  const name = video => root.lang === "ar" ? video.dataset.titleAr : video.dataset.titleEn;
+  function refreshCopy() {
+    const video = videos[active];
+    const playing = !video.paused && !video.ended;
+    container.classList.toggle("is-playing", playing);
+    const action = root.lang === "ar" ? (playing ? "إيقاف مؤقت" : "تشغيل الفيديو") : (playing ? "Pause video" : "Play video");
+    if (toggle) {
+      toggle.setAttribute("aria-label", action);
+      toggle.title = action;
+    }
+    if (start) start.setAttribute("aria-label", root.lang === "ar" ? "تشغيل الفيديو" : "Play logo film");
+    if (isReel) {
+      container.querySelector("[data-motion-title]").textContent = name(video);
+      container.querySelector("[data-motion-index]").textContent = String(active + 1).padStart(2, "0") + " / " + String(videos.length).padStart(2, "0");
+    }
+  }
+  function loadVideo(video) {
+    if (video.dataset.loaded) return;
+    const mobile = saveData || matchMedia("(max-width: 767px)").matches;
+    video.querySelectorAll("source[data-src]").forEach(source => {
+      source.src = mobile && source.dataset.mobileSrc ? source.dataset.mobileSrc : source.dataset.src;
     });
-    refreshMotionCopy();
-  };
-
-  const advanceMotion = () => {
-    if (isTransitioning || !reelIsVisible) return;
-    isTransitioning = true;
-    const leavingVideo = motionVideos[activeMotion];
-    const nextMotion = (activeMotion + 1) % motionVideos.length;
-    const nextVideo = motionVideos[nextMotion];
-
-    motionWipeIndex.textContent = String(nextMotion + 1).padStart(2, "0");
-    motionWipeTitle.textContent = motionName(nextVideo);
-    motionProgress.classList.remove("is-running");
-    leavingVideo.classList.add("is-leaving");
-    motionCinema.classList.add("is-transitioning");
-
-    window.setTimeout(() => {
-      leavingVideo.classList.remove("is-active");
-      leavingVideo.pause();
-      showMotion(nextMotion);
-      motionCinema.classList.remove("is-transitioning");
-      isTransitioning = false;
-      playActiveMotion({ restart: true });
-    }, 980);
-  };
-
-  motionVideos.forEach((video, index) => {
+    video.dataset.loaded = "true";
+    failedSources.set(video, new Set());
+    video.preload = automatic ? "auto" : "metadata";
+    video.load();
+  }
+  function showError(video) {
+    if (video !== videos[active]) return;
+    container.classList.add("has-error");
+    blocked = true;
+    video.pause();
+    refreshCopy();
+    if (start) start.hidden = true;
+    if (fallback) {
+      fallback.hidden = false;
+      if (toggle) toggle.hidden = true;
+    } else if (!automatic) { video.controls = true; video.tabIndex = 0; }
+  }
+  function sync() {
+    const video = videos[active];
+    if (!allowed()) {
+      playRequest++;
+      videos.forEach(item => item.pause());
+      refreshCopy();
+      return;
+    }
+    if (blocked || transitioning || !video.paused) return;
+    loadVideo(video);
     video.muted = true;
+    const request = ++playRequest;
+    video.play().then(() => {
+      // A tab may be hidden while play() waits for the first decoded frame.
+      // An older request must never pause a newer, valid play request.
+      if (request !== playRequest) return;
+      if (!allowed()) video.pause();
+      refreshCopy();
+    }).catch(error => {
+      if (request !== playRequest) return;
+      if (error.name !== "AbortError") blocked = true;
+      if (error.name === "NotSupportedError") showError(video);
+      // Some browsers require a tap in low-power mode. This recovery action can
+      // only start the film, never pause it, and disappears as soon as it plays.
+      if (error.name === "NotAllowedError" && start) start.hidden = false;
+      refreshCopy();
+    });
+  }
+  function show(index) {
+    active = index;
+    videos.forEach((video, i) => {
+      video.classList.toggle("is-active", i === active);
+      video.classList.remove("is-leaving");
+      video.setAttribute("aria-hidden", String(i !== active));
+      if (i !== active) video.pause();
+    });
+    if (progress) progress.style.transform = "scaleX(0)";
+    refreshCopy();
+  }
+  function advance() {
+    if (transitioning) return;
+    const next = (active + 1) % videos.length;
+    if (reduceMotion.matches || !visible) { show(next); sync(); return; }
+    transitioning = true;
+    container.querySelector("[data-motion-wipe-index]").textContent = String(next + 1).padStart(2, "0");
+    container.querySelector("[data-motion-wipe-title]").textContent = name(videos[next]);
+    loadVideo(videos[next]);
+    videos[active].classList.add("is-leaving");
+    container.classList.add("is-transitioning");
+    transitionTimer = setTimeout(() => {
+      show(next);
+      if (videos[next].readyState >= 1) videos[next].currentTime = 0;
+      container.classList.remove("is-transitioning");
+      transitioning = false;
+      sync();
+    }, 760);
+  }
+  videos.forEach((video, index) => {
     video.controls = false;
-    video.addEventListener("ended", advanceMotion);
-    video.addEventListener("loadedmetadata", () => {
-      if (index === activeMotion && !video.paused) startProgress(video);
+    video.muted = true;
+    video.defaultMuted = true;
+    video.tabIndex = -1;
+    video.addEventListener("play", refreshCopy);
+    video.addEventListener("pause", refreshCopy);
+    video.addEventListener("playing", () => {
+      container.classList.remove("has-error");
+      if (fallback) fallback.hidden = true;
+      if (toggle) toggle.hidden = false;
+      if (start) start.hidden = true;
     });
-    video.addEventListener("pause", () => {
-      if (video.classList.contains("is-active") && !video.ended && reelIsVisible && !document.hidden && !isTransitioning) {
-        window.setTimeout(() => video.play().catch(() => {}), 0);
-      }
+    video.addEventListener("error", () => showError(video));
+    const sources = [...video.querySelectorAll("source")];
+    sources.forEach(source => source.addEventListener("error", () => {
+      if (!video.dataset.loaded) return;
+      const failures = failedSources.get(video) || new Set();
+      failures.add(source);
+      failedSources.set(video, failures);
+      if (failures.size === sources.length) showError(video);
+    }));
+    video.addEventListener("timeupdate", () => {
+      if (progress && index === active && video.duration > 0) progress.style.transform = "scaleX(" + video.currentTime / video.duration + ")";
     });
+    if (isReel) video.addEventListener("ended", advance);
   });
-
-  const motionObserver = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        reelIsVisible = entry.isIntersecting;
-        if (reelIsVisible) {
-          playActiveMotion();
-        } else {
-          motionVideos[activeMotion].pause();
-        }
-      });
-    },
-    { threshold: 0.45 }
-  );
-
-  motionObserver.observe(motionCinema);
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) playActiveMotion();
+  if (toggle) toggle.hidden = false;
+  toggle?.addEventListener("click", () => {
+    const video = videos[active];
+    if (!video.paused) { userPaused = true; sync(); }
+    else {
+      userStarted = true; userPaused = false; blocked = false; visible = true;
+      if (video.error || container.classList.contains("has-error")) delete video.dataset.loaded;
+      sync();
+    }
   });
-  showMotion(0);
+  start?.addEventListener("click", () => {
+    blocked = false;
+    sync();
+  });
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting && (!automatic || entry.intersectionRatio >= 0.18);
+      sync();
+    }, { threshold: [0, 0.18] })
+      .observe(container.querySelector(isReel ? ".motion-cinema-stage" : ".logo-film-stage"));
+    const preloadObserver = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      if (!saveData && (automatic || !reduceMotion.matches)) loadVideo(videos[active]);
+      preloadObserver.disconnect();
+    }, { rootMargin: "450px" });
+    preloadObserver.observe(container);
+  } else visible = true;
+  reduceMotion.addEventListener("change", () => {
+    userStarted = false;
+    if (transitioning) {
+      clearTimeout(transitionTimer);
+      transitioning = false;
+      container.classList.remove("is-transitioning");
+      videos[active].classList.remove("is-leaving");
+    }
+    sync();
+  });
+  container.classList.add("is-enhanced");
+  show(0);
+  sync();
+  return { sync, refreshCopy };
 }
-
-const savedLanguage = localStorage.getItem("abdelaty-saber-language");
-if (savedLanguage === "ar" || savedLanguage === "en") {
-  setLanguage(savedLanguage);
-}
+const reel = document.querySelector("[data-motion-cinema]");
+if (reel) players.push(createPlayer(reel, [...reel.querySelectorAll("[data-motion-video]")], true));
+const logoFilm = document.querySelector("[data-logo-film]");
+if (logoFilm) players.push(createPlayer(logoFilm, [logoFilm.querySelector("[data-logo-video]")]));
+document.addEventListener("visibilitychange", syncPlayers);
+window.addEventListener("pagehide", () => document.querySelectorAll("video").forEach(video => video.pause()));
+window.addEventListener("pageshow", syncPlayers);
+let savedLanguage;
+try { savedLanguage = localStorage.getItem("abdelaty-saber-language"); } catch { /* Keep the default language if storage is unavailable. */ }
+setLanguage(savedLanguage === "ar" ? "ar" : "en");
